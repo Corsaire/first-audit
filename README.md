@@ -24,15 +24,18 @@ Major code refactoring was made and lots of new features were added since v1.
 
 ## Major
 
+
+
+
 ### Order reuse attack
 
 Currently `Exchange` contract contains storage with all filled and canceled orders.
 This creates a possibility to reuse same orders in a new version of `Exchange`.
 Or if someone will create a clone of 0x system, orders will be indistinguishable.
 
-**Solution 1** : keep order information in the separate storage contract that can be reused in a new version of `Exchange` contract.
+**Solution 1** : order should be bounded to `Exchange` contract address.
 
-**Solution 2** : order should be bounded to `Exchange` contract address.
+**Solution 2** : keep order information in the separate storage contract that can be reused in a new version of `Exchange` contract.
 
 ## Medium
 
@@ -40,9 +43,9 @@ Or if someone will create a clone of 0x system, orders will be indistinguishable
 
 It's recommended by the protocol to make unlimited allowance to the `AssetProxy` contracts.
 `AssetProxy` allows it's owner to steal all the allowed tokens by adding a new authorized contract.
-This situation is mitigated by the 2-weeks delay on every decision that `ProxyOwner` contract can make.
+This situation is mitigated by the 2-weeks delay on every decision that `AssetProxyOwner` contract can make.
 The problem is that 2-weeks delay logic has been put outside `AssetProxy` contracts which makes it harder to control contracts owner.
-A user needs to constantly keep track on the `AssetProxy` owner and its updates, `secondsTimeLocked`(2-weeks delay can be changed) and all the authorized contracts in order to make sure that tokens are safe.
+In order to make sure that tokens are safe, a user needs to constantly keep track of the `AssetProxy` owner and its updates, `secondsTimeLocked` (2-weeks delay can be changed) and all the authorized contracts.
 This complexity makes it hard to keep track of everything and creates a risk of missing some backdoor in 2-weeks term. 
 Also, it takes time for every user to withdraw their allowance and it's possible to spam the network so not everyone will be able to do this in time.
 
@@ -54,7 +57,7 @@ Also, it takes time for every user to withdraw their allowance and it's possible
 
 ### Malicious token
 
-A token is not guaranteed to be valid and non-malicious. There is no `TokenRegistry` in v2 and no preprocess of tokens. 
+A token is not guaranteed to be valid and non-malicious. There is no `TokenRegistry` in v2 and no precheck of tokens. 
 A maker can put any address to the `makerToken` or `takerToken` field and almost no validation occurs on 0x protocol side. 
 
 **Note 1** : *No dangerous reentrancy attack has been found yet.*
@@ -62,6 +65,8 @@ A maker can put any address to the `makerToken` or `takerToken` field and almost
 **Note 2** : malicious token can try to benefit from the inappropriate use of arbitrage functions. For example, if someone will use `batchFillOrders` or `batchFillOrdersNoThrow` for arbitrage purposes. 
 
 > TBD: Attack details will be shown later.
+
+**Solution** : it's possible to create a token registry, but it will make the system more regulated. I would suggest to keep it the way it is, but keep in mind this trade off.
 
 ### Front-running
 
@@ -77,12 +82,14 @@ Since miners have full control over the transactions ordering in a block, few fr
 * If someone will cancel orders up to `salt == 2^256 - 1` value, it can not be undone.
 * Exception and `uint` overflow on `cancelOrdersUpTo(2^256)` function call.
 
-```uint256 newOrderEpoch = targetOrderEpoch + 1;``` - this statement can cause overflow and exception.
+```uint256 newOrderEpoch = targetOrderEpoch + 1;``` - this statement can cause overflow.
+
+**Note** : It's recommended by the protocol to use timestamp as the `salt`. It's a good advice and no problems will arise in that case.
 
 **Solution** : keep `salt == 0` canceled by default. Switch ```orderEpoch[order.makerAddress][order.senderAddress] > order.salt``` to ```orderEpoch[order.makerAddress][order.senderAddress] >= order.salt``` in 'if-canceled' checking.
 
 
-### `registerAssetProxy` can register a proxy without checking its owner
+### `registerAssetProxy` in `AssetProxyOwner` can register a proxy without checking its owner
 
 `AssetProxyOwner` should only register valid proxies that are owned by this `AssetProxyOwner` contract.
 
