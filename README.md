@@ -15,7 +15,7 @@ System details are described in [specifications](https://github.com/0xProject/0x
 
 ## System description
 
-In general system is well designed and provides broad functionality. 
+In general, the system is well designed and provides broad functionality. 
 It's well designed in terms of upgradability and can be easily paused in case if system security is compromised.
 Major code refactoring was made and lots of new features were added since v1.
 
@@ -36,17 +36,15 @@ Or if someone will create a clone of 0x system, orders will be indistinguishable
 
 ## Medium
 
-*Following issue is not security violation. It's informative to the end user, so user can understand all the risks that he i exposed to.*
-
 ### Trust issues
 
 It's recommended by the protocol to make unlimited allowance to the `AssetProxy` contracts.
-`AssetProxy` allows it's owner to steal all the allowed tokens by adding new authorised contract.
+`AssetProxy` allows it's owner to steal all the allowed tokens by adding a new authorized contract.
 This situation is mitigated by the 2-weeks delay on every decision that `ProxyOwner` contract can make.
 The problem is that 2-weeks delay logic has been put outside `AssetProxy` contracts which makes it harder to control contracts owner.
-User needs to constantly keep track on the `AssetProxy` owner and it's updates, `secondsTimeLocked`(2-weeks delay can be changed) and all the authorised contracts in order to make sure that tokens are safe.
-This complexity makes it hard to keep track on everything and creates a risk of missing some backdoor in 2-weeks term. 
-Also it takes time for every user to withdraw their allowance and it's possible to spam the network so not everyone will be able to do this in time.
+A user needs to constantly keep track on the `AssetProxy` owner and its updates, `secondsTimeLocked`(2-weeks delay can be changed) and all the authorized contracts in order to make sure that tokens are safe.
+This complexity makes it hard to keep track of everything and creates a risk of missing some backdoor in 2-weeks term. 
+Also, it takes time for every user to withdraw their allowance and it's possible to spam the network so not everyone will be able to do this in time.
 
 
 **Solution 1** : create some limitations (like 2-weeks delay) on the `AssetProxy` contract side. 
@@ -56,12 +54,12 @@ Also it takes time for every user to withdraw their allowance and it's possible 
 
 ### **Malicious token**
 
-Token is not guaranteed to be valid and non malicious. There is no `TokenRegistry` in v2 and no preprocess of tokens. 
-Maker can post any address to the `makerToken` or `takerToken` field and almost no validation occurs on 0x protocol side. 
+A token is not guaranteed to be valid and non-malicious. There is no `TokenRegistry` in v2 and no preprocess of tokens. 
+A maker can post any address to the `makerToken` or `takerToken` field and almost no validation occurs on 0x protocol side. 
 
 **Note 1** : *No dangerous reentrancy attack has been found yet.*
 
-**Note 2** : malicious token can try to benefit from unapproporiate usage of arbitrage functions. For example, if someone will use `batchFillOrders` or `batchFillOrdersNoThrow` for arbitrage purposes. 
+**Note 2** : malicious token can try to benefit from the inappropriate usage of arbitrage functions. For example, if someone will use `batchFillOrders` or `batchFillOrdersNoThrow` for arbitrage purposes. 
 
 > TBD: Attack details will be shown later.
 
