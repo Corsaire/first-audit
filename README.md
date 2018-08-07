@@ -16,7 +16,7 @@ System details are described in [specifications](https://github.com/0xProject/0x
 ## System description
 
 In general, the system is well designed and provides broad functionality. 
-It's well designed in terms of upgradability and can be easily paused in case if system security is compromised.
+It's good in terms of upgradability and can be easily paused in case if system security is compromised.
 Major code refactoring was made and lots of new features were added since v1.
 
 
@@ -52,23 +52,26 @@ Also, it takes time for every user to withdraw their allowance and it's possible
 **Solution 2 (only for takers)** : use forwarder contract for every trade. This can be safer and requires only one transaction.
 
 
-### **Malicious token**
+### Malicious token
 
 A token is not guaranteed to be valid and non-malicious. There is no `TokenRegistry` in v2 and no preprocess of tokens. 
-A maker can post any address to the `makerToken` or `takerToken` field and almost no validation occurs on 0x protocol side. 
+A maker can put any address to the `makerToken` or `takerToken` field and almost no validation occurs on 0x protocol side. 
 
 **Note 1** : *No dangerous reentrancy attack has been found yet.*
 
-**Note 2** : malicious token can try to benefit from the inappropriate usage of arbitrage functions. For example, if someone will use `batchFillOrders` or `batchFillOrdersNoThrow` for arbitrage purposes. 
+**Note 2** : malicious token can try to benefit from the inappropriate use of arbitrage functions. For example, if someone will use `batchFillOrders` or `batchFillOrdersNoThrow` for arbitrage purposes. 
 
 > TBD: Attack details will be shown later.
 
+### Front-running
+
+Since miners have full control over the transactions ordering in a block, few front-running techniques are possible. New functionality allows you to track all `matchOrders` call and try to front-run it with higher gas cost. It's a good use case because such calls are pure profit (in exchange for ZRX fees and transaction fees).
 
 # Specific issues
 
 ## Medium
 
-### **`cancelOrdersUpTo` issues**
+### `cancelOrdersUpTo` overflow issues
 
 * Order with `salt == 2^256` can not be cancelled using this function.
 * If someone will cancel orders up to `salt == 2^256 - 1` value, it can not be undone.
@@ -81,37 +84,36 @@ A maker can post any address to the `makerToken` or `takerToken` field and almos
 
 ### `registerAssetProxy` can register a proxy without checking its owner
 
-`AssetProxyOwner` should only register valid proxies that ate owned by this `AssetProxyOwner` contract.
+`AssetProxyOwner` should only register valid proxies that are owned by this `AssetProxyOwner` contract.
 
 **Solution** : add ownership check
 
 
+## Minor
 
-## **Minor**
+### `batchCancelOrders` should be `NoThrow`
 
-### **Batch order canceling should be NoThrow**
-
+Right now batch cancellation throws an exception if one of the orders is already filled or canceled.
 Canceling all possible orders, even if one of them is already canceled/filled is more common behavior.
 
-### **Unbounded loop**
+### Unbounded loop
 
 There is unbounded loop in `MixinAuthorizable.sol` in `removeAuthorizedAddress` function.
 
-**Solution** : change data structure to more appropriate. For example, keep values in array and indexes in mapping.
+**Solution 1** : change data structure to more appropriate. For example, keep values in array and indexes in mapping.
 
-### Using external for functions that are only called from outside
+
+### Whitepaper and official website are outdated
 
 
 # Missing functionality
 
 
+### Atomically match more than 2 orders
 
-# TBD
+In the current implementation, `matchOrders` can only match 2 orders, but arbitrage can be more complicated. 
+For example if we have 3 orders (WETH -> ZRX), (ZRX -> ST), (ST -> WETH). 
+All these orders can also be partially matched in order to do the arbitrage. 
+It's possible to try to achieve this functionality by using `batchFillOrKillOrders`, but it's impossible to do 
 
-### Rounding error - TBD
-
-### Front running - TBD
-
-### Trading multiple erc721 is not possible ???
-
-### Whitepaper and official website are outdated
+### Trading multiple erc721 is not possible
