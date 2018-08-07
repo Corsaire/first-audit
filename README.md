@@ -91,7 +91,7 @@ A maker can post any address to the `makerToken` or `takerToken` field and almos
 
 ### **Batch order canceling should be NoThrow**
 
-
+Canceling all possible orders, even if one of them is already canceled/filled is more common behavior.
 
 ### **Unbounded loop**
 
@@ -99,12 +99,18 @@ There is unbounded loop in `MixinAuthorizable.sol` in `removeAuthorizedAddress` 
 
 **Solution** : change data structure to more appropriate. For example, keep values in array and indexes in mapping.
 
-
 ### Using external for functions that are only called from outside
 
-### Rounding error - TBC
 
-### Front running - TBC
+# Missing functionality
+
+
+
+# TBD
+
+### Rounding error - TBD
+
+### Front running - TBD
 
 ### Trading multiple erc721 is not possible ???
 
