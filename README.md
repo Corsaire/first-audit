@@ -109,6 +109,8 @@ There is unbounded loop in `MixinAuthorizable.sol` in `removeAuthorizedAddress` 
 
 **Solution 1** : change data structure to more appropriate. For example, keep values in array and indexes in mapping.
 
+**Solution 2** : remove `removeAuthorizedAddress` function since it's not used anywhere. I prefer not to use this solution, because this function might be useful in future.
+
 
 ### Whitepaper and official website are outdated
 
@@ -124,3 +126,5 @@ All these orders can also be partially matched in order to do the arbitrage.
 It's possible to try to achieve this functionality by using `batchFillOrKillOrders`, but it's impossible to do 
 
 ### Trading multiple erc721 is not possible
+
+### Create 'fillOrKill' order from maker side
