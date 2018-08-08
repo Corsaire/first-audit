@@ -24,13 +24,10 @@ Major code refactoring was made and lots of new features were added since v1.
 
 ## Major
 
-
-
-
 ### Order reuse attack
 
 Currently `Exchange` contract contains storage with all filled and canceled orders.
-This creates a possibility to reuse same orders in a new version of `Exchange`.
+This creates a possibility to reuse the same orders in a new version of `Exchange`.
 Or if someone will create a clone of 0x system, orders will be indistinguishable.
 
 **Solution 1** : order should be bounded to `Exchange` contract address.
@@ -45,14 +42,14 @@ It's recommended by the protocol to make unlimited allowance to the `AssetProxy`
 `AssetProxy` allows it's owner to steal all the allowed tokens by adding a new authorized contract.
 This situation is mitigated by the 2-weeks delay on every decision that `AssetProxyOwner` contract can make.
 The problem is that 2-weeks delay logic has been put outside `AssetProxy` contracts which makes it harder to control contracts owner.
-In order to make sure that tokens are safe, a user needs to constantly keep track of the `AssetProxy` owner and its updates, `secondsTimeLocked` (2-weeks delay can be changed) and all the authorized contracts.
+In order to make sure that tokens are safe, a user needs to constantly keep track of the `AssetProxy` owner and its upgrades, `secondsTimeLocked` (2-weeks delay can be changed) and all the authorized contracts.
 This complexity makes it hard to keep track of everything and creates a risk of missing some backdoor in 2-weeks term. 
-Also, it takes time for every user to withdraw their allowance and it's possible to spam the network so not everyone will be able to do this in time.
+Also, it takes time for every user to withdraw their allowance and it's possible to spam the network so not everyone will be able to withdraw in time.
 
 
 **Solution 1** : create some limitations (like 2-weeks delay) on the `AssetProxy` contract side. 
 
-**Solution 2 (only for takers)** : use forwarder contract for every trade. This can be safer and requires only one transaction.
+**Solution 2 (only for takers)** : use forwarder contract for every trade. This can be safer and requires only one transaction, but it's more expensive.
 
 
 ### Malicious token
@@ -66,7 +63,7 @@ A maker can put any address to the `makerToken` or `takerToken` field and almost
 
 > TBD: Attack details will be shown later.
 
-**Solution** : it's possible to create a token registry, but it will make the system more regulated. I would suggest to keep it the way it is, but keep in mind this trade off.
+**Solution** : it's possible to create a token registry, but it will make the system more regulated. I would suggest to keep the system the way it is, but keep in mind this trade off.
 
 ### Front-running
 
@@ -79,14 +76,14 @@ Since miners have full control over the transactions ordering in a block, few fr
 ### `cancelOrdersUpTo` overflow issues
 
 * Order with `salt == 2^256` can not be cancelled using this function.
-* If someone will cancel orders up to `salt == 2^256 - 1` value, it can not be undone.
+* If someone will cancel orders up to `salt == 2^256 - 1` value, it can not be undone. No orders can be accepted from that address anymore.
 * Exception and `uint` overflow on `cancelOrdersUpTo(2^256)` function call.
 
 ```uint256 newOrderEpoch = targetOrderEpoch + 1;``` - this statement can cause overflow.
 
 **Note** : It's recommended by the protocol to use timestamp as the `salt`. It's a good advice and no problems will arise in that case.
 
-**Solution** : keep `salt == 0` canceled by default. Switch ```orderEpoch[order.makerAddress][order.senderAddress] > order.salt``` to ```orderEpoch[order.makerAddress][order.senderAddress] >= order.salt``` in 'if-canceled' checking.
+**Solution** : keep `salt == 0` canceled by default. Change ```orderEpoch[order.makerAddress][order.senderAddress] > order.salt``` to ```orderEpoch[order.makerAddress][order.senderAddress] >= order.salt``` in 'if-canceled' checking.
 
 
 ### `registerAssetProxy` in `AssetProxyOwner` can register a proxy without checking its owner
@@ -123,8 +120,10 @@ There is unbounded loop in `MixinAuthorizable.sol` in `removeAuthorizedAddress` 
 In the current implementation, `matchOrders` can only match 2 orders, but arbitrage can be more complicated. 
 For example if we have 3 orders (WETH -> ZRX), (ZRX -> ST), (ST -> WETH). 
 All these orders can also be partially matched in order to do the arbitrage. 
-It's possible to try to achieve this functionality by using `batchFillOrKillOrders`, but it's impossible to do 
+It's possible to try to achieve this functionality by using `batchFillOrKillOrders`, but it has more limited functionality.
 
 ### Trading multiple erc721 is not possible
+
+There is no way to atomically swap 2 ERC-721 tokens for 1 ERC-721 token.
 
 ### Create 'fillOrKill' order from maker side
