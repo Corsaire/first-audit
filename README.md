@@ -49,6 +49,8 @@ Currently `Exchange` contract contains storage with all filled and canceled orde
 This creates a possibility to reuse the same orders in a new version of `Exchange`.
 Or if someone will create a clone of 0x system, orders will be indistinguishable.
 
+**Note** : some problems might appear with indistinguishable orders from mainnet and test networks.
+
 **Solution 1** : order should be bounded to `Exchange` contract address.
 
 **Solution 2** : keep order information in the separate storage contract that can be reused in a new version of `Exchange` contract.
@@ -122,6 +124,16 @@ Since miners have full control over the transactions ordering in a block, few fr
 
 
 ## Minor
+
+### Emit event on `preSign` in `MixinSignatureValidator`
+
+Currently no event is emited. It's recomended to emit events on every sagnificant state change.
+
+### Validation of `preSign` function call in `MixinSignatureValidator`
+
+Functions `preSign` and `setSignatureValidatorApproval` are pretty similar by design and their impact, but they have different validation methods. `preSign` can't be called directly by signer without additional signing arguments.
+
+**Solution** : make similar validation procedure in both functions for code consistency. No need to call `isValidSignature` in `preSign` if `signerAddress == msg.sender`. 
 
 ### `batchCancelOrders` should be `NoThrow`
 
