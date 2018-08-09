@@ -22,7 +22,26 @@ Major code refactoring was made and lots of new features were added since v1.
 
 # General security tradeoffs
 
+
+## Critical
+
+> Need to doublecheck it in practice    
+
+### Re-entrancy attack on `executeTransaction` allows stealing all the funds
+
+Using `currentContextAddress` is very dangerous technique. If an attacker is able to reach Exchange contract in victims context, the attacker can steal all the funds from the victim. In order to do anything on behalf of the victim, the attacker only needs to make a re-entrancy attack (with malicious token or validator) while someone is calling `executeTransaction` on behalf of the victim.
+
+Example:
+1. The attacker creates order and signs it with `SignatureType.Wallet` signature type.
+1. If the taker will try to take this order using `executeTransaction`. This will overwrite the `currentContextAddress` to the taker address.
+1. Attacker(maker) can make re-entrancy on `isValid` function and execute a bunch of `fillOrder`(fake order in attackers benefit) in the context of the victim.
+1. All the funds of the victim are stolen (except for the first order purchase).
+
+**Solution** : context concept should be modified significantly. (TBD)
+
+
 ## Major
+
 
 ### Order reuse attack
 
@@ -52,18 +71,27 @@ Also, it takes time for every user to withdraw their allowance and it's possible
 **Solution 2 (only for takers)** : use forwarder contract for every trade. This can be safer and requires only one transaction, but it's more expensive.
 
 
-### Malicious token
+### Malicious token re-entrancy
 
 A token is not guaranteed to be valid and non-malicious. There is no `TokenRegistry` in v2 and no precheck of tokens. 
 A maker can put any address to the `makerToken` or `takerToken` field and almost no validation occurs on 0x protocol side. 
 
-**Note 1** : *No dangerous reentrancy attack has been found yet.*
+**Note 1** : *One dangerous attack is related to the `executeTransaction` and was described before*
 
 **Note 2** : malicious token can try to benefit from the inappropriate use of arbitrage functions. For example, if someone will use `batchFillOrders` or `batchFillOrdersNoThrow` for arbitrage purposes. 
 
 > TBD: Attack details will be shown later.
 
 **Solution** : it's possible to create a token registry, but it will make the system more regulated. I would suggest to keep the system the way it is, but keep in mind this trade off.
+
+### Malicious validator/wallet-validator re-entrancy
+
+It's possible to make a re-entrancy while validating a signature. It's possible to do with either `SignatureType.Wallet` or `SignatureType.Validator`. It can be used to front-run this transaction or execute some other transactions using victims gas.
+
+**Note 1** : *One dangerous attack is related to the `executeTransaction` and was described before*
+
+**Solution** : TDB.
+
 
 ### Front-running
 
