@@ -103,6 +103,16 @@ Since miners have full control over the transactions ordering in a block, few fr
 
 ## Medium
 
+
+### Another re-entrancy attack on `executeTransaction` allows executing the same transaction multiple times.
+
+Taker's signature validation is happening before `transactions[transactionHash] = true;`. That allows validator/wallet to make a reentrancy attack and reuse that transaction.
+
+**Note** : attack is not very dangerous because taker needs to approve the validator first and has all the control over its wallet. So the risk of happening is minimal. If the taker approves malicious validator, it can do much more dangerous things (steal all the allowed funds).
+
+**Solution** : execute `transactions[transactionHash] = true;` before validation of signature. It will be more expensive but only if someone will try to call it illegally.
+
+
 ### `cancelOrdersUpTo` overflow issues
 
 * Order with `salt == 2^256` can not be cancelled using this function.
